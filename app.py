@@ -1,16 +1,14 @@
 """
 Business Intelligence Dashboard – Real‑time analytics for companies.
 Connect to SQL, Excel, CSV, visualize KPIs, sales trends, inventory, custom reports.
-FULLY MULTI‑LANGUAGE: English, Spanish, French, Haitian Creole.
+FULLY MULTI‑LANGUAGE with instant switching.
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 import sqlite3
-import os
 from datetime import datetime
 
 # ------------------------------
@@ -21,28 +19,8 @@ st.set_page_config(page_title="BI Dashboard – GlobalInternet.py", layout="wide
 def show_haitian_flag(width=100):
     st.image("https://flagcdn.com/w320/ht.png", width=width)
 
-# Authentication
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-
-if not st.session_state.authenticated:
-    st.title("🔐 Login Required")
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        show_haitian_flag(150)
-        st.markdown("<h2 style='text-align: center;'>Business Intelligence Dashboard</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>by GlobalInternet.py</p>", unsafe_allow_html=True)
-        password_input = st.text_input("Enter password to access", type="password")
-        if st.button("Login"):
-            if password_input == "20082010":
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("Incorrect password. Access denied.")
-    st.stop()
-
 # ------------------------------
-# MULTI-LANGUAGE DICTIONARY
+# MULTI-LANGUAGE DICTIONARY (CORRECT MAPPING)
 # ------------------------------
 LANGUAGES = {
     "English": "en",
@@ -71,8 +49,7 @@ TEXTS = {
         "csv_option": "Upload CSV or Excel file",
         "sqlite_option": "Upload SQLite database (.db)",
         "load_sample_btn": "Load Sample Data",
-        "upload_csv_btn": "Upload CSV/Excel",
-        "upload_sqlite_btn": "Upload SQLite",
+        "choose_data_source": "Choose data source:",
         "date_filter": "Date Range",
         "apply_filter": "Apply Filter",
         "kpi_total_sales": "Total Sales",
@@ -89,13 +66,12 @@ TEXTS = {
         "regional_title": "Sales by Region",
         "download_report_btn": "📥 Download Report (CSV)",
         "download_click": "📥 Click to download CSV",
-        "report_generated": "Report generated!",
         "no_data_msg": "No data available. Please upload a file or use sample data.",
         "load_sample_now": "Load Sample Data Now",
         "inventory_not_available": "Inventory data not available in this dataset.",
         "footer_note": "📊 **Custom reports available** – contact us to tailor dashboards to your exact needs.",
-        "choose_data_source": "Choose data source:",
-        "date_filter_hint": "Select start and end date"
+        "start_date": "Start date",
+        "end_date": "End date"
     },
     "es": {
         "app_title": "Panel de Inteligencia de Negocios",
@@ -116,8 +92,7 @@ TEXTS = {
         "csv_option": "Subir archivo CSV o Excel",
         "sqlite_option": "Subir base de datos SQLite (.db)",
         "load_sample_btn": "Cargar datos de ejemplo",
-        "upload_csv_btn": "Subir CSV/Excel",
-        "upload_sqlite_btn": "Subir SQLite",
+        "choose_data_source": "Elija la fuente de datos:",
         "date_filter": "Rango de fechas",
         "apply_filter": "Aplicar filtro",
         "kpi_total_sales": "Ventas totales",
@@ -134,13 +109,12 @@ TEXTS = {
         "regional_title": "Ventas por región",
         "download_report_btn": "📥 Descargar informe (CSV)",
         "download_click": "📥 Haga clic para descargar CSV",
-        "report_generated": "¡Informe generado!",
         "no_data_msg": "No hay datos disponibles. Suba un archivo o use datos de ejemplo.",
         "load_sample_now": "Cargar datos de ejemplo ahora",
         "inventory_not_available": "Datos de inventario no disponibles en este conjunto de datos.",
         "footer_note": "📊 **Informes personalizados disponibles** – contáctenos para adaptar los paneles a sus necesidades.",
-        "choose_data_source": "Elija la fuente de datos:",
-        "date_filter_hint": "Seleccione fecha de inicio y fin"
+        "start_date": "Fecha inicio",
+        "end_date": "Fecha fin"
     },
     "fr": {
         "app_title": "Tableau de bord décisionnel",
@@ -161,8 +135,7 @@ TEXTS = {
         "csv_option": "Télécharger un fichier CSV ou Excel",
         "sqlite_option": "Télécharger une base SQLite (.db)",
         "load_sample_btn": "Charger les données exemple",
-        "upload_csv_btn": "Télécharger CSV/Excel",
-        "upload_sqlite_btn": "Télécharger SQLite",
+        "choose_data_source": "Choisissez la source de données :",
         "date_filter": "Plage de dates",
         "apply_filter": "Appliquer le filtre",
         "kpi_total_sales": "Ventes totales",
@@ -179,13 +152,12 @@ TEXTS = {
         "regional_title": "Ventes par région",
         "download_report_btn": "📥 Télécharger le rapport (CSV)",
         "download_click": "📥 Cliquez pour télécharger CSV",
-        "report_generated": "Rapport généré !",
         "no_data_msg": "Aucune donnée disponible. Téléchargez un fichier ou utilisez les données d'exemple.",
         "load_sample_now": "Charger les données exemple maintenant",
         "inventory_not_available": "Données d'inventaire non disponibles dans cet ensemble.",
         "footer_note": "📊 **Rapports personnalisés disponibles** – contactez-nous pour adapter les tableaux de bord à vos besoins.",
-        "choose_data_source": "Choisissez la source de données :",
-        "date_filter_hint": "Sélectionnez la date de début et de fin"
+        "start_date": "Date de début",
+        "end_date": "Date de fin"
     },
     "ht": {
         "app_title": "Tablodbò Entelijan Biznis",
@@ -206,8 +178,7 @@ TEXTS = {
         "csv_option": "Telechaje fichye CSV oswa Excel",
         "sqlite_option": "Telechaje baz done SQLite (.db)",
         "load_sample_btn": "Chaje done egzanp",
-        "upload_csv_btn": "Telechaje CSV/Excel",
-        "upload_sqlite_btn": "Telechaje SQLite",
+        "choose_data_source": "Chwazi sous done:",
         "date_filter": "Ranje dat",
         "apply_filter": "Aplike filt",
         "kpi_total_sales": "Lavant total",
@@ -224,13 +195,12 @@ TEXTS = {
         "regional_title": "Lavant pa rejyon",
         "download_report_btn": "📥 Telechaje rapò (CSV)",
         "download_click": "📥 Klike pou telechaje CSV",
-        "report_generated": "Rapò kreye!",
         "no_data_msg": "Pa gen done disponib. Telechaje yon fichye oswa itilize done egzanp.",
         "load_sample_now": "Chaje done egzanp kounye a",
         "inventory_not_available": "Done envantè pa disponib nan seri done sa a.",
         "footer_note": "📊 **Rapò pèsonalize disponib** – kontakte nou pou adapte tablodbò yo nan bezwen ou yo.",
-        "choose_data_source": "Chwazi sous done:",
-        "date_filter_hint": "Chwazi dat kòmansman ak fini"
+        "start_date": "Dat kòmansman",
+        "end_date": "Dat fini"
     }
 }
 
@@ -239,19 +209,55 @@ def get_text(key):
     return TEXTS[lang].get(key, key)
 
 # ------------------------------
-# AFTER LOGIN – MAIN APP
+# INITIALIZE SESSION STATE
 # ------------------------------
-col_flag, col_title = st.columns([1, 3])
-with col_flag:
-    show_haitian_flag(120)
-with col_title:
-    st.markdown(f"<h1>{get_text('app_title')}</h1>", unsafe_allow_html=True)
-    st.markdown(f"*{get_text('app_subtitle')}*")
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "language" not in st.session_state:
+    st.session_state.language = "en"
+if "sales_df" not in st.session_state:
+    st.session_state.sales_df = None
+if "inventory_df" not in st.session_state:
+    st.session_state.inventory_df = None
+if "filtered_sales" not in st.session_state:
+    st.session_state.filtered_sales = None
 
 # ------------------------------
-# SIDEBAR – INFO & LOGOUT & LANGUAGE
+# LOGIN PAGE
 # ------------------------------
+if not st.session_state.authenticated:
+    st.title("🔐 Login Required")
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        show_haitian_flag(150)
+        st.markdown("<h2 style='text-align: center;'>Business Intelligence Dashboard</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>by GlobalInternet.py</p>", unsafe_allow_html=True)
+        password_input = st.text_input("Enter password to access", type="password")
+        if st.button("Login"):
+            if password_input == "20082010":
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password. Access denied.")
+    st.stop()
+
+# ------------------------------
+# AFTER LOGIN – LANGUAGE SELECTOR FIRST (so all subsequent UI uses correct language)
+# ------------------------------
+# Language selector at the very top of sidebar
 with st.sidebar:
+    # Language selection (applies instantly)
+    lang_display = st.selectbox(
+        "🌐 Language",
+        options=list(LANGUAGES.keys()),
+        index=list(LANGUAGES.values()).index(st.session_state.language)
+    )
+    new_lang = LANGUAGES[lang_display]
+    if new_lang != st.session_state.language:
+        st.session_state.language = new_lang
+        st.rerun()
+    
+    # Now the rest of the sidebar uses the selected language
     st.markdown(f"## 🇭🇹 {get_text('sidebar_company')}")
     show_haitian_flag(80)
     st.markdown(f"### {get_text('sidebar_product')}")
@@ -268,14 +274,20 @@ with st.sidebar:
     st.markdown(f"### © 2025 GlobalInternet.py")
     st.markdown(get_text('copyright'))
     st.markdown("---")
-    # Language selector
-    lang_choice = st.selectbox("🌐 Language", list(LANGUAGES.keys()))
-    st.session_state["language"] = LANGUAGES[lang_choice]
-    st.markdown("---")
     if st.button(get_text('logout_btn'), use_container_width=True):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
+
+# ------------------------------
+# MAIN APP HEADER (uses current language)
+# ------------------------------
+col_flag, col_title = st.columns([1, 3])
+with col_flag:
+    show_haitian_flag(120)
+with col_title:
+    st.markdown(f"<h1>{get_text('app_title')}</h1>", unsafe_allow_html=True)
+    st.markdown(f"*{get_text('app_subtitle')}*")
 
 # ------------------------------
 # DATA LOADING FUNCTIONS
@@ -343,17 +355,7 @@ def load_from_sqlite(file):
     return sales_df, inventory_df
 
 # ------------------------------
-# INITIALIZE SESSION STATE
-# ------------------------------
-if "sales_df" not in st.session_state:
-    st.session_state.sales_df = None
-if "inventory_df" not in st.session_state:
-    st.session_state.inventory_df = None
-if "filtered_sales" not in st.session_state:
-    st.session_state.filtered_sales = None
-
-# ------------------------------
-# DATA SOURCE SELECTION (with translations)
+# DATA SOURCE SELECTION (translated)
 # ------------------------------
 st.sidebar.markdown(f"## {get_text('data_source')}")
 data_option = st.sidebar.radio(
@@ -391,7 +393,7 @@ elif data_option == get_text('sqlite_option'):
         st.rerun()
 
 # ------------------------------
-# DASHBOARD DISPLAY
+# DASHBOARD DISPLAY (everything translated)
 # ------------------------------
 if st.session_state.sales_df is not None:
     sales = st.session_state.filtered_sales if st.session_state.filtered_sales is not None else st.session_state.sales_df
@@ -404,9 +406,9 @@ if st.session_state.sales_df is not None:
         max_date = sales['date'].max()
         col1, col2 = st.sidebar.columns(2)
         with col1:
-            start_date = st.date_input(get_text('date_filter'), min_date, min_value=min_date, max_value=max_date)
+            start_date = st.date_input(get_text('start_date'), min_date, min_value=min_date, max_value=max_date)
         with col2:
-            end_date = st.date_input("", max_date, min_value=min_date, max_value=max_date)  # second part
+            end_date = st.date_input(get_text('end_date'), max_date, min_value=min_date, max_value=max_date)
         if st.sidebar.button(get_text('apply_filter'), use_container_width=True):
             mask = (sales['date'] >= pd.Timestamp(start_date)) & (sales['date'] <= pd.Timestamp(end_date))
             st.session_state.filtered_sales = sales[mask].copy()
@@ -431,7 +433,7 @@ if st.session_state.sales_df is not None:
     with col4:
         st.metric(get_text('kpi_inventory_value'), f"${total_inventory:,.0f}")
     
-    # Tabs with translated names
+    # Tabs
     tab1, tab2, tab3, tab4 = st.tabs([
         get_text('tab_sales_trend'),
         get_text('tab_top_products'),
